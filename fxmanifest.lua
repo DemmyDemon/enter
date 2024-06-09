@@ -1,6 +1,6 @@
 fx_version 'cerulean'
 game 'gta5'
-name 'greenzone'
+name 'enter'
 description 'Enter the building'
 version '0.0.1'
 lua54 'yes'
