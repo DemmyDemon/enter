@@ -88,9 +88,6 @@ local function enterLocation(location)
     local ped = PlayerPedId()
     FreezeEntityPosition(ped, true)
     SetEntityCoordsNoOffset(ped, location.inside.x, location.inside.y, location.inside.z, false, false, true)
-    if location.nightvision then
-        SetNightvision(true)
-    end
     if location.dof then
         SetCamUseShallowDofMode(cam, true)
         SetCamNearDof(cam, location.dof[1] or 0.5)
@@ -113,7 +110,7 @@ local function exitLocation(where)
     where = where or hasEntered.door
     SetEntityCoordsNoOffset(ped, where.x, where.y, where.z, false, false, true)
     SetEntityHeading(ped, where.w)
-    if hasEntered.nightvision then
+    if hasEntered.nightvision and GetUsingnightvision() then
         SetNightvision(false)
     end
     if hasEntered.blur then
@@ -222,12 +219,24 @@ local function switchMulticam()
 end
 
 local function inside()
+    if not hasEntered then return end
+
     disableConflictingControls()
     HideHudAndRadarThisFrame()
-    if hasEntered?.dof then
+    if hasEntered.dof then
         SetUseHiDof()
     end
-    if hasEntered?.multicam then
+    if hasEntered.nightvision then
+        local hour = GetClockHours()
+        if hour > 22 or hour < 6 then
+            if not GetUsingnightvision() then
+                SetNightvision(true)
+            end
+        elseif GetUsingnightvision() then
+            SetNightvision(false)
+        end
+    end
+    if hasEntered.multicam then
         local now = GetGameTimer()
         if now >= multicamLastSwitch + multicamTime then
             faded(switchMulticam)
@@ -236,8 +245,8 @@ local function inside()
     end
     if not hasEntered?.suppressExit then
         ---@diagnostic disable-next-line:need-check-nil,undefined-field Trust me, bro, I have it all mapped out.
-        if waitedSince <= GetGameTimer() - (hasEntered?.wait or waitTime) then
-            halp('ENTEREXITHELP', hasEntered?.label)
+        if waitedSince <= GetGameTimer() - (hasEntered.wait or waitTime) then
+            halp('ENTEREXITHELP', hasEntered.label)
             if IsControlJustReleased(0, 51) then
                 faded(exitLocation)
             end
