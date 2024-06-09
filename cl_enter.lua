@@ -256,6 +256,7 @@ end
 
 local function processLocations(locations, resource)
     for idx, location in ipairs(locations) do
+        location.origin = resource or GetCurrentResourceName()
         if type(location.door) == "vector4" then
             if type(location.inside) ~= "vector3" then
                 location.inside = location.door.xyz + vector3(0,0,-10)
@@ -301,5 +302,12 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName == GetCurrentResourceName() then
         exitLocation()
+    end
+    for _, locations in pairs(zonedLocations) do
+        for idx, location in ipairs(locations) do
+            if location.origin == resourceName then
+                table.remove(locations, idx)
+            end
+        end
     end
 end)
