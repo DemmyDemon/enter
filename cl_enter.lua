@@ -44,9 +44,11 @@ end
 
 local function setCamProperties(cam, camProps, pointCoords)
     if type(camProps) == "table" then
+        SetFocusPosAndVel(camProps.coords.x, camProps.coords.y, camProps.coords.z, 0.0, 0.0, 0.0)
         SetCamCoord(cam, camProps.coords.x, camProps.coords.y, camProps.coords.z)
         SetCamRot(cam, camProps.rot.x, camProps.rot.y, camProps.rot.z, 2)
     else
+        SetFocusPosAndVel(camProps.x, camProps.y, camProps.z, 0.0, 0.0, 0.0)
         SetCamCoord(cam, camProps.x, camProps.y, camProps.z)
         PointCamAtCoord(cam, pointCoords.x, pointCoords.y, pointCoords.z)
     end
@@ -103,6 +105,7 @@ end
 
 local function exitLocation(where)
     if not hasEntered then return end
+    ClearFocus()
     maybeTrigger(hasEntered.exitEvent)
     endCam()
     local ped = PlayerPedId()
