@@ -42,19 +42,19 @@ local function faded(funcref, ...)
     HideHudAndRadarThisFrame()
 end
 
-local function setCamProperties(cam, camProps)
-    SetCamCoord(cam, camProps.coords.x, camProps.coords.y, camProps.coords.z)
-    SetCamRot(cam, camProps.rot.x, camProps.rot.y, camProps.rot.z, 2)
+local function setCamProperties(cam, camProps, pointCoords)
+    if type(camProps) == "table" then
+        SetCamCoord(cam, camProps.coords.x, camProps.coords.y, camProps.coords.z)
+        SetCamRot(cam, camProps.rot.x, camProps.rot.y, camProps.rot.z, 2)
+    else
+        SetCamCoord(cam, camProps.x, camProps.y, camProps.z)
+        PointCamAtCoord(cam, pointCoords.x, pointCoords.y, pointCoords.z)
+    end
 end
 
 local function startCam(location)
     local cam = getCam()
-    if type(location.cam) == "table" then
-        setCamProperties(cam, location.cam)
-    else
-        SetCamCoord(cam, location.cam.x, location.cam.y, location.cam.z)
-        PointCamAtCoord(cam, location.inside.x, location.inside.y, location.inside.z)
-    end
+    setCamProperties(cam, location.cam, location.inside)
     RenderScriptCams(true, false, 0, true, false)
     return cam
 end
@@ -210,10 +210,10 @@ local function switchMulticam()
     local idx = multicamIndex + 1
     if hasEntered.multicam and idx <= #hasEntered.multicam then
         multicamIndex = idx
-        setCamProperties(cam, hasEntered.multicam[multicamIndex])
+        setCamProperties(cam, hasEntered.multicam[multicamIndex], hasEntered.inside)
     else
         multicamIndex = 0
-        setCamProperties(cam, hasEntered.cam)
+        setCamProperties(cam, hasEntered.cam, hasEntered.inside)
     end
 
 end
@@ -255,7 +255,7 @@ local function processLocations(locations, resource)
     for idx, location in ipairs(locations) do
         if type(location.door) == "vector4" then
             if type(location.inside) ~= "vector3" then
-                location.inside = location.door.xyz + vector3(0,0,10)
+                location.inside = location.door.xyz + vector3(0,0,-10)
             end
             if not validCamLocation(location.cam) then
                 location.cam = {coords=location.door.xyz + vector3(0,0,0.8), rot=vec3(0, 0, location.door.w)}
