@@ -100,7 +100,7 @@ local function enterLocation(location)
     end
 end
 
-local function exitLocation(where)
+local function exitLocation(where, funcref)
     if not hasEntered then return end
     ClearFocus()
     maybeTrigger(hasEntered.exitEvent)
@@ -117,6 +117,12 @@ local function exitLocation(where)
         TriggerScreenblurFadeOut(0)
     end
     waitedSince = GetGameTimer() + 1000
+    if funcref and type(funcref) == "function" then
+        local ok, err = pcall(funcref)
+        if not ok then
+            print("ERROR running post-exit function: " .. err)
+        end
+    end
     hasEntered = nil
 end
 
@@ -254,6 +260,23 @@ local function inside()
     end
 end
 
+local function getRelativeLocation(location, heading, distance)
+    location = location or vector3(0,0,0)
+    local rotation = vector3(0,0,heading or 0)
+    distance = distance or 10.0
+
+    local tZ = math.rad(rotation.z)
+    local tX = math.rad(rotation.x)
+
+    local absX = math.abs(math.cos(tX))
+
+    local rx = location.x + (-math.sin(tZ) * absX) * distance
+    local ry = location.y + (math.cos(tZ) * absX) * distance
+    local rz = location.z + (math.sin(tX)) * distance
+
+    return vector3(rx,ry,rz)
+end
+
 local function validCamLocation(cam)
     if not cam then return false end
     if type(cam) == "vector3" then return true end
@@ -268,10 +291,10 @@ local function processLocations(locations, resource)
         location.origin = resource or GetCurrentResourceName()
         if type(location.door) == "vector4" then
             if type(location.inside) ~= "vector3" then
-                location.inside = location.door.xyz + vector3(0,0,-10)
+                location.inside = getRelativeLocation(location.door.xyz, location.door.w, -3.0) + vector3(0,0,-2.5)
             end
             if not validCamLocation(location.cam) then
-                location.cam = {coords=location.door.xyz + vector3(0,0,0.8), rot=vec3(0, 0, location.door.w)}
+                location.cam = getRelativeLocation(location.door.xyz, location.door.w, 10.0) + vector3(0, 0, 10)
             end
             local zone = GetNameOfZone(location.door.x, location.door.y, location.door.z)
             if not zonedLocations[zone] then
@@ -299,8 +322,8 @@ Citizen.CreateThread(function()
 end)
 
 RegisterNetEvent('enter:exit')
-AddEventHandler('enter:exit', function(where)
-    faded(exitLocation, where)
+AddEventHandler('enter:exit', function(where, funcref)
+    faded(exitLocation, where, funcref)
 end)
 
 RegisterNetEvent('enter:add-locations')
