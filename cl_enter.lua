@@ -117,7 +117,7 @@ local function exitLocation(where, funcref)
         TriggerScreenblurFadeOut(0)
     end
     waitedSince = GetGameTimer() + 1000
-    if funcref and type(funcref) == "function" then
+    if funcref then
         local ok, err = pcall(funcref)
         if not ok then
             print("ERROR running post-exit function: " .. err)
