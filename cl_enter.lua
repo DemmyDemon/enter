@@ -149,22 +149,26 @@ local function debugMarker(location, range, full, current)
 end
 
 local function stateCheck(location)
-
     if not location.state then return true end
     if LocalPlayer.state.devmode then return true end
 
     for key, value in pairs(location.state) do
         if type(value) == "table" then
+            local any = false
             for _, subvalue in ipairs(value) do
                 if LocalPlayer.state[key] == subvalue then
-                    return true
+                    any = true
                 end
             end
-        elseif LocalPlayer.state[key] == value then
-            return true
+            if not any then
+                return false
+            end
+        elseif LocalPlayer.state[key] ~= value then
+            return false
         end
     end
-    return false
+
+    return true
 end
 
 local function outside()
