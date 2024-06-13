@@ -1,4 +1,5 @@
 local zonedLocations = {}
+local keyedLocations = {}
 local hasEntered = nil
 local triggerRange = 1.0
 local fadeTime = 150
@@ -255,7 +256,7 @@ local function inside()
     end
     if not hasEntered?.suppressExit then
         ---@diagnostic disable-next-line:need-check-nil,undefined-field Trust me, bro, I have it all mapped out.
-        if waitedSince <= GetGameTimer() - (hasEntered.wait or waitTime) then
+        if waitedSince <= GetGameTimer() - (hasEntered?.wait or waitTime) then
             halp('ENTEREXITHELP', hasEntered.label)
             if IsControlJustReleased(0, 51) then
                 faded(exitLocation)
@@ -304,7 +305,17 @@ local function processLocations(locations, resource)
             if not zonedLocations[zone] then
                 zonedLocations[zone] = {}
             end
+            location.zone = zone
             table.insert(zonedLocations[zone], location)
+
+            if location.key then
+                if not keyedLocations[resource] then
+                    keyedLocations[resource] = {}
+                end
+                keyedLocations[resource][location.key] = location
+                print( ("Added keyed location %s %s"):format(resource, location.key))
+            end
+
         else
             print( ("Discarded a malformed location %i from %s"):format(idx, resource) )
         end
@@ -335,10 +346,26 @@ AddEventHandler('enter:add-locations', function(locations)
     processLocations(locations, GetInvokingResource())
 end)
 
+RegisterNetEvent('enter:command', function(args)
+    if #args ~= 2 then
+        print('You need exactly two arguments:  The resource the location is from, and the key it is registered with, in that order.')
+        return
+    end
+    if keyedLocations and keyedLocations[args[1]] and keyedLocations[args[1]][args[2]] then
+        faded(enterLocation,keyedLocations[args[1]][args[2]])
+    else
+        print(("%q %q is an invalid resource/key combination"):format(args[1], args[2]))
+    end
+end)
+
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName == GetCurrentResourceName() then
         exitLocation()
     end
+    if hasEntered and hasEntered.origin == resourceName then
+        exitLocation()
+    end
+    keyedLocations[resourceName] = nil
     for _, locations in pairs(zonedLocations) do
         for idx, location in ipairs(locations) do
             if location.origin == resourceName then
